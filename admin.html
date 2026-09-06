@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>KnightBot — Ops Console</title>
+<style>
+  :root {
+    --bg: #05100a;
+    --panel: #0b1b12;
+    --panel-2: #0f2318;
+    --border: #1d3a28;
+    --text: #d8ffe6;
+    --muted: #5f9678;
+    --accent: #39ff88;
+    --accent-dim: #1f7a48;
+    --amber: #ffb84d;
+    --red: #ff5566;
+    --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--mono);
+    background:
+      radial-gradient(ellipse at top, rgba(57,255,136,0.05), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 3px),
+      var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--accent-dim); color: #fff; }
+
+  /* ── Login ── */
+  #loginCard {
+    max-width: 340px;
+    margin: 14vh auto 0;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 28px 24px;
+    box-shadow: 0 0 0 1px rgba(57,255,136,0.05), 0 20px 60px rgba(0,0,0,0.5);
+  }
+  #loginCard .eyebrow { color: var(--accent); font-size: 11px; letter-spacing: 0.14em; margin-bottom: 6px; }
+  #loginCard h1 { font-size: 16px; margin: 0 0 20px; font-weight: 600; }
+  label { display: block; font-size: 11px; color: var(--muted); margin: 0 0 5px; letter-spacing: 0.03em; }
+  input, textarea, select {
+    width: 100%;
+    padding: 10px 11px;
+    background: #071009;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent-dim);
+    box-shadow: 0 0 0 2px rgba(57,255,136,0.15);
+  }
+  button {
+    font-family: var(--mono);
+    cursor: pointer;
+    border-radius: 3px;
+    border: 1px solid var(--accent-dim);
+    background: rgba(57,255,136,0.08);
+    color: var(--accent);
+    padding: 9px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    transition: background .12s;
+  }
+  button:hover { background: rgba(57,255,136,0.16); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: #041008; border-color: var(--accent); width: 100%; padding: 11px; }
+  button.primary:hover { background: #55ffa0; }
+  button.danger { border-color: rgba(255,85,102,0.5); background: rgba(255,85,102,0.08); color: var(--red); }
+  button.danger:hover { background: rgba(255,85,102,0.18); }
+  button.ghost { background: transparent; border-color: var(--border); color: var(--muted); }
+  button.ghost:hover { color: var(--text); border-color: var(--muted); }
+  .error { color: var(--red); font-size: 12px; margin-top: 8px; min-height: 14px; }
+
+  /* ── App shell ── */
+  #app { display: none; min-height: 100vh; }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(11,27,18,0.7);
+    backdrop-filter: blur(6px);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; }
+  .brand strong { font-size: 13px; letter-spacing: 0.03em; }
+  .brand span.sub { color: var(--muted); font-size: 11px; margin-left: 8px; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .content { padding: 18px 20px 60px; max-width: 1080px; margin: 0 auto; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 12px 14px; }
+  .stat .n { font-size: 20px; font-weight: 700; }
+  .stat .l { font-size: 10px; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px; }
+  .stat.accent .n { color: var(--accent); }
+  .stat.amber .n { color: var(--amber); }
+  .stat.red .n { color: var(--red); }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .toolbar input[type="text"] { flex: 1; min-width: 160px; margin-bottom: 0; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    padding: 7px 11px; border: 1px solid var(--border); border-radius: 20px;
+    font-size: 11px; color: var(--muted); cursor: pointer; white-space: nowrap;
+  }
+  .chip.active { border-color: var(--accent-dim); color: var(--accent); background: rgba(57,255,136,0.08); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
+  thead th { text-align: left; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  tbody td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 12.5px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr { cursor: pointer; transition: background .1s; }
+  tbody tr:hover { background: rgba(57,255,136,0.04); }
+  .phone { font-weight: 600; }
+  .liveline { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .status-dot.connected { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse 1.8s infinite; }
+  .status-dot.pairing, .status-dot.connecting { background: var(--amber); animation: pulse 1s infinite; }
+  .status-dot.offline, .status-dot.error, .status-dot.disconnected { background: #3a4a3f; }
+
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 10px; font-weight: 700; letter-spacing: 0.03em; }
+  .badge.paid { background: rgba(57,255,136,0.12); color: var(--accent); }
+  .badge.trial { background: rgba(255,184,77,0.12); color: var(--amber); }
+  .badge.expired { background: rgba(255,85,102,0.12); color: var(--red); }
+  .badge.blocked { background: rgba(255,85,102,0.2); color: var(--red); }
+
+  /* ── Detail slide-over ── */
+  #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 30; }
+  #detail {
+    display: none; position: fixed; top: 0; right: 0; bottom: 0; width: min(440px, 100vw);
+    background: var(--panel); border-left: 1px solid var(--border); z-index: 31;
+    overflow-y: auto; padding: 18px 18px 40px;
+  }
+  #detail .dhead { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+  #detail h2 { font-size: 16px; margin: 0; }
+  #detail .closeBtn { background: transparent; border: none; color: var(--muted); font-size: 18px; padding: 2px 6px; }
+  .dtabs { display: flex; gap: 4px; margin: 14px 0 16px; background: var(--panel-2); padding: 4px; border-radius: 4px; }
+  .dtab { flex: 1; text-align: center; padding: 8px 4px; border-radius: 3px; color: var(--muted); font-size: 11px; cursor: pointer; }
+  .dtab.active { background: var(--accent-dim); color: #fff; }
+  .mtab { flex: 1; text-align: center; padding: 8px 4px; border-radius: 3px; color: var(--muted); font-size: 11px; cursor: pointer; }
+  .mtab.active { background: var(--accent-dim); color: #fff; }
+  .dpane { display: none; }
+  .dpane.active { display: block; }
+  .kv { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .kv .k { color: var(--muted); }
+  .kv .v { text-align: right; word-break: break-all; }
+  .linkbox { display: flex; gap: 6px; margin: 10px 0; }
+  .linkbox input { flex: 1; margin-bottom: 0; font-size: 11px; }
+  .actrow { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .actrow button { flex: 1; min-width: 120px; }
+  .group-list { max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; background: #071009; margin-bottom: 10px; }
+  .group-row { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .group-row:last-child { border-bottom: none; }
+  .group-row input { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); }
+  .group-row .gn { flex: 1; }
+  .group-row .gc { color: var(--muted); font-size: 10px; }
+  .toast { margin-top: 12px; padding: 10px 12px; border-radius: 3px; font-size: 12px; display: none; white-space: pre-wrap; }
+  .toast.success { display: block; background: rgba(57,255,136,0.1); color: var(--accent); }
+  .toast.error { display: block; background: rgba(255,85,102,0.1); color: var(--red); }
+  .section-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; }
+  .empty { text-align: center; color: var(--muted); padding: 30px 10px; font-size: 12px; }
+  .usage-row { display: flex; align-items: center; gap: 8px; font-size: 11px; margin-bottom: 6px; }
+  .usage-row .ud { width: 56px; color: var(--muted); flex-shrink: 0; }
+  .usage-row .ub-track { flex: 1; background: #071009; border: 1px solid var(--border); border-radius: 3px; height: 14px; overflow: hidden; }
+  .usage-row .ub-fill { height: 100%; background: var(--accent-dim); }
+  .usage-row .un { width: 28px; text-align: right; color: var(--text); flex-shrink: 0; }
+
+  /* ── Group Links & Number Lookup (Mipangilio) ── */
+  .group-row { flex-wrap: wrap; }
+  .group-row .linkbtn { flex: 0 0 auto; min-width: 0; padding: 6px 10px; font-size: 10px; }
+  .group-row .glink-box { flex-basis: 100%; display: flex; gap: 6px; margin-top: 6px; }
+  .group-row .glink-box input { flex: 1; margin-bottom: 0; font-size: 10px; }
+  .lookup-card { display: flex; align-items: center; gap: 12px; padding: 12px; background: #071009; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; }
+  .lookup-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--panel-2); flex-shrink: 0; }
+  .lookup-avatar-fallback { display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .lookup-name { font-weight: 700; font-size: 13px; }
+  .lookup-number { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+  @media (max-width: 640px) {
+    #detail { width: 100vw; }
+    .content { padding: 14px 12px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loginCard">
+  <div class="eyebrow">// KNIGHTBOT PAIRING</div>
+  <h1>Ops Console — Ingia</h1>
+  <label>Username</label>
+  <input id="username" type="text" autocomplete="username" />
+  <label>Password</label>
+  <input id="password" type="password" autocomplete="current-password" />
+  <button class="primary" onclick="doLogin()">Ingia</button>
+  <div class="error" id="loginError"></div>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <strong>KNIGHTBOT · OPS CONSOLE</strong>
+      <span class="sub" id="clock"></span>
+    </div>
+    <button class="ghost" onclick="logout()">Toka</button>
+  </div>
+
+  <div class="content">
+    <div class="stats" id="statsRow"></div>
+
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="Tafuta namba ya simu..." />
+      <div class="chips" id="filterChips">
+        <div class="chip active" data-filter="all">Zote</div>
+        <div class="chip" data-filter="connected">Live</div>
+        <div class="chip" data-filter="trial">Trial</div>
+        <div class="chip" data-filter="paid">Amelipa</div>
+        <div class="chip" data-filter="expired">Muda Umeisha</div>
+        <div class="chip" data-filter="blocked">Blocked</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button class="ghost" onclick="downloadBackup()">⬇️ Backup Kamili</button>
+      <button class="danger" onclick="resetAllSessions()">🗑️ Futa Sessions Zote Chakavu</button>
+      <button class="ghost" onclick="loadUsers()">↻ Refresh</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>Namba</th><th>Hali</th><th>Muda</th><th></th></tr>
+      </thead>
+      <tbody id="userRows"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="overlay" onclick="closeDetail()"></div>
+<div id="detail">
+  <div class="dhead">
+    <div>
+      <h2 id="dPhone">—</h2>
+      <div class="liveline"><span class="status-dot" id="dStatusDot"></span><span id="dStatusText">—</span></div>
+    </div>
+    <button class="closeBtn" onclick="closeDetail()">✕</button>
+  </div>
+
+  <div class="dtabs">
+    <div class="dtab active" data-dtab="overview">Muhtasari</div>
+    <div class="dtab" data-dtab="groups">Groups</div>
+    <div class="dtab" data-dtab="settings">Mipangilio</div>
+    <div class="dtab" data-dtab="billing">Malipo</div>
+    <div class="dtab" data-dtab="usage">Matumizi</div>
+  </div>
+
+  <!-- Overview -->
+  <div class="dpane active" id="dpane-overview">
+    <div class="section-label">Dashboard Link</div>
+    <div class="linkbox">
+      <input type="text" id="dDashLink" readonly />
+      <button class="ghost" onclick="copyDashLink()">Copy</button>
+    </div>
+    <div class="actrow">
+      <button onclick="resendLink()">📤 Tuma Link Upya</button>
+      <button class="danger" onclick="resetUserSession()">🔌 Futa Session (Force Re-pair)</button>
+      <button class="danger" onclick="deleteUserCompletely()">🗑️ Futa Kabisa (Ondoa kwenye Orodha)</button>
+    </div>
+    <div class="toast" id="dOverviewMsg"></div>
+  </div>
+
+  <!-- Groups & messaging -->
+  <div class="dpane" id="dpane-groups">
+    <div class="section-label">Groups za Bot Hii</div>
+    <div class="group-list" id="dGroupList"><div class="empty">Inapakia...</div></div>
+    <div class="actrow" style="margin-bottom:10px;">
+      <button class="ghost" onclick="dSelectAllGroups()">☑️ Zote</button>
+      <button class="ghost" onclick="dSelectNoneGroups()">⬜ Ondoa</button>
+    </div>
+
+    <div class="section-label">Aina ya Kutuma</div>
+    <div class="dtabs" id="dSendModeTabs" style="margin:0 0 12px;">
+      <div class="mtab active" data-sendmode="message">📢 Ujumbe kwa Groups</div>
+      <div class="mtab" data-sendmode="status">📤 Status ya Group</div>
+    </div>
+
+    <div class="dtabs" id="dMediaTypeTabs" style="margin:0 0 12px;">
+      <div class="mtab active" data-mtype="text">📝 Text</div>
+      <div class="mtab" data-mtype="image">🖼️ Picha</div>
+      <div class="mtab" data-mtype="video">🎬 Video</div>
+      <div class="mtab" data-mtype="audio">🎵 Wimbo</div>
+    </div>
+
+    <div id="mpane-text">
+      <label>Ujumbe (Maandishi)</label>
+      <textarea id="dMsgText" rows="3" placeholder="Andika ujumbe..."></textarea>
+    </div>
+    <div id="mpane-image" style="display:none;">
+      <label>Chagua Picha (kutoka storage)</label>
+      <input type="file" id="dImageFile" accept="image/*" />
+      <label>Caption (hiari)</label>
+      <textarea id="dImageCaption" rows="2" placeholder="Maelezo mafupi..."></textarea>
+    </div>
+    <div id="mpane-video" style="display:none;">
+      <label>Chagua Video (kutoka storage)</label>
+      <input type="file" id="dVideoFile" accept="video/*" />
+      <label>Caption (hiari)</label>
+      <textarea id="dVideoCaption" rows="2" placeholder="Maelezo mafupi..."></textarea>
+    </div>
+    <div id="mpane-audio" style="display:none;">
+      <label>Chagua Wimbo/Audio (kutoka storage)</label>
+      <input type="file" id="dAudioFile" accept="audio/*" />
+    </div>
+
+    <button id="dSendBtn" onclick="dSendMessage(this)">📢 Tuma kwa Groups Nilizochagua</button>
+    <div class="toast" id="dGroupsMsg"></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="dpane" id="dpane-settings">
+    <label>Prefix (herufi 1-3)</label>
+    <input type="text" id="dPrefix" placeholder="!" />
+    <label>Jina la Bot</label>
+    <input type="text" id="dBotName" placeholder="KnightBot" />
+    <div class="actrow">
+      <button onclick="dSaveSettings()">💾 Hifadhi</button>
+      <button class="ghost" onclick="dClearSettings()">Rudisha Default</button>
+    </div>
+    <div class="toast" id="dSettingsMsg"></div>
+
+    <div class="section-label">🔗 Links za Groups</div>
+    <div class="group-list" id="dGroupLinksList"><div class="empty">Inapakia...</div></div>
+
+    <div class="section-label">🔍 Angalia Namba (Bots Zote)</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Inapekua groups za bots zote zinazoendesha, si za mteja huyu tu.</div>
+    <div class="linkbox">
+      <input type="text" id="dLookupNumber" placeholder="Mfano 2557XXXXXXXX" />
+      <button onclick="dLookupNumber(this)">Tafuta</button>
+    </div>
+    <div id="dLookupResult"></div>
+    <div class="toast" id="dLookupMsg"></div>
+  </div>
+
+  <!-- Billing -->
+  <div class="dpane" id="dpane-billing">
+    <div class="kv"><span class="k">Hali</span><span class="v" id="dBillingStatus">—</span></div>
+    <div class="kv"><span class="k">Kifurushi</span><span class="v" id="dBillingPackage">—</span></div>
+    <div class="kv"><span class="k">Muda</span><span class="v" id="dBillingTime">—</span></div>
+    <div class="kv"><span class="k">Malipo ya mwisho</span><span class="v" id="dBillingLastPayment">—</span></div>
+
+    <div class="section-label">Badilisha Muda (Ongeza au Punguza)</div>
+    <div class="actrow" style="margin-top:0;">
+      <button class="ghost" onclick="dQuickAdjust(-1, this)">➖ Siku 1</button>
+      <button onclick="dQuickAdjust(1, this)">➕ Siku 1</button>
+    </div>
+    <div class="section-label">Au Weka Idadi Maalum (Manually)</div>
+    <div class="linkbox">
+      <input type="number" id="dAdjustDays" placeholder="mfano 3 au -3" style="margin-bottom:0;" />
+      <button onclick="dAdjustDays()">Weka</button>
+    </div>
+
+    <div class="actrow">
+      <button onclick="dMarkPaid()">✅ Weka Amelipa (Kifurushi)</button>
+      <button class="ghost" onclick="dExtendTrial()">+ Trial siku 1</button>
+    </div>
+    <div class="actrow">
+      <button class="danger" id="dBlockBtn" onclick="dToggleBlock()">Zuia Mtumiaji</button>
+    </div>
+    <div class="toast" id="dBillingMsg"></div>
+  </div>
+
+  <!-- Usage -->
+  <div class="dpane" id="dpane-usage">
+    <div class="section-label">Matumizi — Ujumbe Ulioshughulikiwa (Siku 14 za Mwisho)</div>
+    <div id="dUsageChart"></div>
+  </div>
+</div>
+
+<script>
+  // 🔧 Badilisha URL hii iwe ya Railway app yako mwenyewe (bila "/" mwishoni)
+  const API_BASE = "https://jina-la-bot-yako.up.railway.app";
+  let ADMIN_TOKEN = sessionStorage.getItem('adminToken') || '';
+  let ALL_USERS = [];
+  let CURRENT_FILTER = 'all';
+  let CURRENT_PHONE = null;
+  let CURRENT_DETAIL = null;
+
+  async function api(path, opts = {}) {
+    const res = await fetch(API_BASE + path, {
+      ...opts,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(ADMIN_TOKEN ? { Authorization: 'Bearer ' + ADMIN_TOKEN } : {}),
+        ...(opts.headers || {}),
+      },
+    });
+    const data = await res.json();
+    if (!res.ok || data.ok === false) {
+      const detailText = data.details ? '\n' + JSON.stringify(data.details) : '';
+      throw new Error((data.error || 'Hitilafu') + detailText);
+    }
+    return data;
+  }
+
+  async function doLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    document.getElementById('loginError').textContent = '';
+    try {
+      const data = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+      ADMIN_TOKEN = data.token;
+      sessionStorage.setItem('adminToken', ADMIN_TOKEN);
+      showApp();
+    } catch (e) {
+      document.getElementById('loginError').textContent = e.message;
+    }
+  }
+
+  function logout() {
+    sessionStorage.removeItem('adminToken');
+    location.reload();
+  }
+
+  function fmtDate(ms) {
+    if (!ms) return '—';
+    return new Date(ms).toLocaleString('sw-TZ', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function userState(u) {
+    const now = Date.now();
+    if (u.blocked) return 'blocked';
+    if (u.isPaid && u.paidUntil > now) return 'paid';
+    if (!u.isPaid && u.trialExpiresAt > now) return 'trial';
+    return 'expired';
+  }
+
+  function statusBadge(u) {
+    const s = userState(u);
+    const label = { paid: 'Amelipa', trial: 'Trial', expired: 'Muda Umeisha', blocked: 'Blocked' }[s];
+    return `<span class="badge ${s}">${label}</span>`;
+  }
+
+  function timeLeft(u) {
+    const now = Date.now();
+    if (u.isPaid && u.paidUntil > now) return 'Hadi ' + fmtDate(u.paidUntil);
+    if (!u.isPaid && u.trialExpiresAt > now) return 'Trial hadi ' + fmtDate(u.trialExpiresAt);
+    return '—';
+  }
+
+  function renderStats() {
+    const total = ALL_USERS.length;
+    const live = ALL_USERS.filter(u => u.liveStatus === 'connected').length;
+    const trial = ALL_USERS.filter(u => userState(u) === 'trial').length;
+    const paid = ALL_USERS.filter(u => userState(u) === 'paid').length;
+    const expired = ALL_USERS.filter(u => userState(u) === 'expired').length;
+    const blocked = ALL_USERS.filter(u => userState(u) === 'blocked').length;
+    document.getElementById('statsRow').innerHTML = `
+      <div class="stat"><div class="n">${total}</div><div class="l">Wateja</div></div>
+      <div class="stat accent"><div class="n">${live}</div><div class="l">Live Sasa</div></div>
+      <div class="stat amber"><div class="n">${trial}</div><div class="l">Trial</div></div>
+      <div class="stat accent"><div class="n">${paid}</div><div class="l">Amelipa</div></div>
+      <div class="stat red"><div class="n">${expired}</div><div class="l">Muda Umeisha</div></div>
+      <div class="stat red"><div class="n">${blocked}</div><div class="l">Blocked</div></div>
+    `;
+  }
+
+  function renderRows() {
+    const q = document.getElementById('searchInput').value.trim();
+    let list = ALL_USERS;
+    if (q) list = list.filter(u => u.phoneNumber.includes(q));
+    if (CURRENT_FILTER === 'connected') list = list.filter(u => u.liveStatus === 'connected');
+    else if (CURRENT_FILTER !== 'all') list = list.filter(u => userState(u) === CURRENT_FILTER);
+
+    if (!list.length) {
+      document.getElementById('userRows').innerHTML = `<tr><td colspan="4"><div class="empty">Hakuna wateja wanaolingana.</div></td></tr>`;
+      return;
+    }
+
+    document.getElementById('userRows').innerHTML = list.map(u => `
+      <tr onclick="openDetail('${u.phoneNumber}')">
+        <td>
+          <div class="phone">${u.phoneNumber}</div>
+          <div class="liveline"><span class="status-dot ${u.liveStatus}"></span>${u.liveStatus}</div>
+        </td>
+        <td>${statusBadge(u)}</td>
+        <td>${timeLeft(u)}</td>
+        <td>›</td>
+      </tr>
+    `).join('');
+  }
+
+  async function loadUsers() {
+    const data = await api('/api/admin/users');
+    ALL_USERS = data.users.sort((a, b) => b.pairedAt - a.pairedAt);
+    renderStats();
+    renderRows();
+  }
+
+  document.getElementById('searchInput').addEventListener('input', renderRows);
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      CURRENT_FILTER = chip.dataset.filter;
+      renderRows();
+    });
+  });
+
+  async function downloadBackup() {
+    try {
+      const res = await fetch(API_BASE + '/api/admin/backup', { headers: { Authorization: 'Bearer ' + ADMIN_TOKEN } });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Backup imeshindwa.');
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pairing-backup-${new Date().toISOString().slice(0, 10)}.tar.gz`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('❌ ' + e.message);
+    }
+  }
+
+  async function resetAllSessions() {
+    if (!confirm('Hii itafuta session ZOTE za pairing (namba zote zitalazimika ku-pair upya). Endelea?')) return;
+    try {
+      const data = await api('/api/admin/reset-sessions', { method: 'POST' });
+      alert(`✅ Session ${data.removed} zimefutwa.`);
+      loadUsers();
+    } catch (e) {
+      alert('❌ ' + e.message);
+    }
+  }
+
+  /* ============ Detail panel ============ */
+  function showToast(id, ok, text) {
+    const el = document.getElementById(id);
+    el.className = 'toast ' + (ok ? 'success' : 'error');
+    el.textContent = (ok ? '✅ ' : '❌ ') + text;
+  }
+
+  document.querySelectorAll('.dtab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.dtab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.dpane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('dpane-' + tab.dataset.dtab).classList.add('active');
+    });
+  });
+
+  let CURRENT_MTYPE = 'text';
+  document.querySelectorAll('#dMediaTypeTabs .mtab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#dMediaTypeTabs .mtab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      CURRENT_MTYPE = tab.dataset.mtype;
+      ['text','image','video','audio'].forEach(t => {
+        document.getElementById('mpane-' + t).style.display = (t === CURRENT_MTYPE) ? 'block' : 'none';
+      });
+    });
+  });
+
+  // "Aina ya Kutuma" — Ujumbe wa kawaida kwa groups, au Status ya group
+  // (groupStatus:true). Inabadilisha endpoint na maandishi ya kitufe.
+  let CURRENT_SENDMODE = 'message';
+  document.querySelectorAll('#dSendModeTabs .mtab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#dSendModeTabs .mtab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      CURRENT_SENDMODE = tab.dataset.sendmode;
+      const btn = document.getElementById('dSendBtn');
+      btn.textContent = CURRENT_SENDMODE === 'status'
+        ? '📤 Tuma Status kwa Groups Nilizochagua'
+        : '📢 Tuma kwa Groups Nilizochagua';
+    });
+  });
+
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result.split(',')[1]);
+      r.onerror = () => reject(new Error('Imeshindwa kusoma faili.'));
+      r.readAsDataURL(file);
+    });
+  }
+
+  async function openDetail(phone) {
+    CURRENT_PHONE = phone;
+    document.getElementById('dPhone').textContent = phone;
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById('detail').style.display = 'block';
+    document.querySelectorAll('.dtab')[0].click();
+    ['dOverviewMsg','dGroupsMsg','dSettingsMsg','dBillingMsg','dLookupMsg'].forEach(id => {
+      document.getElementById(id).className = 'toast';
+      document.getElementById(id).textContent = '';
+    });
+    // Number Lookup ni ya muda (per-customer view) — isibaki ikionyesha
+    // matokeo ya mteja aliyepita akifungua mteja mwingine.
+    document.getElementById('dLookupNumber').value = '';
+    document.getElementById('dLookupResult').innerHTML = '';
+    // Reset the compose form so a file/text picked for a PREVIOUS customer
+    // never accidentally gets sent to this one.
+    document.getElementById('dMsgText').value = '';
+    document.getElementById('dImageFile').value = '';
+    document.getElementById('dImageCaption').value = '';
+    document.getElementById('dVideoFile').value = '';
+    document.getElementById('dVideoCaption').value = '';
+    document.getElementById('dAudioFile').value = '';
+    document.querySelectorAll('#dMediaTypeTabs .mtab')[0].click();
+    document.querySelectorAll('#dSendModeTabs .mtab')[0].click();
+    await refreshDetail();
+    refreshBillingPane();
+  }
+
+  function closeDetail() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('detail').style.display = 'none';
+    CURRENT_PHONE = null;
+    CURRENT_DETAIL = null;
+  }
+
+  async function refreshDetail() {
+    try {
+      const data = await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/detail`);
+      CURRENT_DETAIL = data;
+      document.getElementById('dStatusDot').className = 'status-dot ' + data.liveStatus;
+      document.getElementById('dStatusText').textContent = data.liveStatus + (data.pairingCode ? ' · code: ' + data.pairingCode : '') + (data.error ? ' · ' + data.error : '');
+      document.getElementById('dDashLink').value = data.dashboardUrl || '(bado hajaunganishwa)';
+
+      const groupList = document.getElementById('dGroupList');
+      if (data.liveStatus !== 'connected') {
+        groupList.innerHTML = `<div class="empty">Bot haipo "live" kwa sasa — groups hazipatikani.</div>`;
+      } else if (data.groupsError) {
+        groupList.innerHTML = `<div class="empty">❌ ${data.groupsError}</div>`;
+      } else if (!data.groups.length) {
+        groupList.innerHTML = `<div class="empty">Bot haipo kwenye group yoyote.</div>`;
+      } else {
+        groupList.innerHTML = data.groups.map(g => `
+          <label class="group-row">
+            <input type="checkbox" class="dGroupCb" value="${g.id}" />
+            <span class="gn">${g.subject}</span>
+            <span class="gc">${g.participants}</span>
+          </label>
+        `).join('');
+      }
+
+      document.getElementById('dPrefix').value = data.settings.prefix || '';
+      document.getElementById('dPrefix').placeholder = 'Default: ' + data.settings.defaultPrefix;
+      document.getElementById('dBotName').value = data.settings.botName || '';
+      document.getElementById('dBotName').placeholder = 'Default: ' + data.settings.defaultBotName;
+
+      const linksList = document.getElementById('dGroupLinksList');
+      if (data.liveStatus !== 'connected') {
+        linksList.innerHTML = `<div class="empty">Bot haipo "live" kwa sasa — links hazipatikani.</div>`;
+      } else if (data.groupsError) {
+        linksList.innerHTML = `<div class="empty">❌ ${escapeHtml(data.groupsError)}</div>`;
+      } else if (!data.groups.length) {
+        linksList.innerHTML = `<div class="empty">Bot haipo kwenye group yoyote.</div>`;
+      } else {
+        linksList.innerHTML = data.groups.map(g => `
+          <div class="group-row">
+            <span class="gn">${escapeHtml(g.subject)}</span>
+            <span class="gc">${g.participants}</span>
+            <button class="ghost linkbtn" onclick="dFetchGroupLink('${escapeAttr(g.id)}', this)">🔗 Pata Link</button>
+          </div>
+        `).join('');
+      }
+
+      // Billing pane — package + last payment (server-computed, not from ALL_USERS)
+      document.getElementById('dBillingPackage').textContent = data.billing.packageLabel;
+      document.getElementById('dBillingLastPayment').textContent = data.billing.lastPayment
+        ? `Siku ${data.billing.lastPayment.days} · TZS ${Number(data.billing.lastPayment.amount || 0).toLocaleString('sw-TZ')} · ${fmtDate(data.billing.lastPayment.at)}`
+        : 'Hakuna bado';
+
+      // Usage chart
+      const maxCount = Math.max(1, ...data.usage.map(u => u.messageCount));
+      document.getElementById('dUsageChart').innerHTML = data.usage.map(u => `
+        <div class="usage-row">
+          <span class="ud">${u.date.slice(5)}</span>
+          <span class="ub-track"><span class="ub-fill" style="width:${Math.round((u.messageCount / maxCount) * 100)}%"></span></span>
+          <span class="un">${u.messageCount}</span>
+        </div>
+      `).join('');
+    } catch (e) {
+      showToast('dOverviewMsg', false, e.message);
+    }
+  }
+
+  function refreshBillingPane() {
+    const u = ALL_USERS.find(x => x.phoneNumber === CURRENT_PHONE);
+    if (!u) return;
+    document.getElementById('dBillingStatus').innerHTML = statusBadge(u);
+    document.getElementById('dBillingTime').textContent = timeLeft(u);
+    document.getElementById('dBlockBtn').textContent = u.blocked ? '🔓 Fungua Mtumiaji' : '🚫 Zuia Mtumiaji';
+  }
+
+  async function dAdjustDays() {
+    const raw = document.getElementById('dAdjustDays').value.trim();
+    const days = Number(raw);
+    if (!raw || Number.isNaN(days) || days === 0) return showToast('dBillingMsg', false, 'Weka namba ya siku (mfano 3 au -3).');
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/adjust-days`, { method: 'POST', body: JSON.stringify({ days }) });
+      showToast('dBillingMsg', true, (days > 0 ? `Umeongeza siku ${days}.` : `Umepunguza siku ${Math.abs(days)}.`));
+      document.getElementById('dAdjustDays').value = '';
+      await loadUsers();
+      refreshBillingPane();
+      refreshDetail();
+    } catch (e) {
+      showToast('dBillingMsg', false, e.message);
+    }
+  }
+
+  // Quick +1 / -1 day stepper — applies immediately (no need to type
+  // anything). The manual input above still works for custom amounts.
+  async function dQuickAdjust(days, btn) {
+    if (btn) btn.disabled = true;
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/adjust-days`, { method: 'POST', body: JSON.stringify({ days }) });
+      showToast('dBillingMsg', true, (days > 0 ? `Umeongeza siku ${days}.` : `Umepunguza siku ${Math.abs(days)}.`));
+      await loadUsers();
+      refreshBillingPane();
+      refreshDetail();
+    } catch (e) {
+      showToast('dBillingMsg', false, e.message);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function copyDashLink() {
+    const input = document.getElementById('dDashLink');
+    input.select();
+    document.execCommand('copy');
+    showToast('dOverviewMsg', true, 'Link imenakiliwa.');
+  }
+
+  async function resendLink() {
+    try {
+      await api('/api/resend-link', { method: 'POST', body: JSON.stringify({ phoneNumber: CURRENT_PHONE }) });
+      showToast('dOverviewMsg', true, 'Link imetumwa WhatsApp yake.');
+    } catch (e) {
+      showToast('dOverviewMsg', false, e.message);
+    }
+  }
+
+  async function resetUserSession() {
+    if (!confirm(`Futa session ya ${CURRENT_PHONE}? Atalazimika ku-pair upya.`)) return;
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/reset-session`, { method: 'POST' });
+      showToast('dOverviewMsg', true, 'Session imefutwa.');
+      refreshDetail();
+      loadUsers();
+    } catch (e) {
+      showToast('dOverviewMsg', false, e.message);
+    }
+  }
+
+  async function deleteUserCompletely() {
+    if (!confirm(`Futa ${CURRENT_PHONE} KABISA? Hii itafuta session NA rekodi zake zote (malipo, trial, mipangilio). HAIWEZI kutenduliwa — namba isipopairiwa tena kama mteja mpya kabisa.`)) return;
+    if (!confirm(`Uhakika? ${CURRENT_PHONE} ataondolewa kabisa kwenye orodha.`)) return;
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/delete`, { method: 'POST' });
+      showToast('dOverviewMsg', true, 'Mteja amefutwa kabisa.');
+      closeDetail();
+      loadUsers();
+    } catch (e) {
+      showToast('dOverviewMsg', false, e.message);
+    }
+  }
+
+  function dSelectAllGroups() { document.querySelectorAll('.dGroupCb').forEach(cb => cb.checked = true); }
+  function dSelectNoneGroups() { document.querySelectorAll('.dGroupCb').forEach(cb => cb.checked = false); }
+
+  async function dSendMessage(btn) {
+    const groupIds = Array.from(document.querySelectorAll('.dGroupCb:checked')).map(cb => cb.value);
+    if (!groupIds.length) return showToast('dGroupsMsg', false, 'Chagua angalau group moja.');
+
+    btn.disabled = true;
+    const originalLabel = btn.textContent;
+    btn.textContent = 'Inatuma...';
+
+    try {
+      let body = { groupIds };
+
+      if (CURRENT_MTYPE === 'text') {
+        const text = document.getElementById('dMsgText').value.trim();
+        if (!text) throw new Error('Andika ujumbe kwanza.');
+        body.text = text;
+      } else if (CURRENT_MTYPE === 'image') {
+        const file = document.getElementById('dImageFile').files[0];
+        if (!file) throw new Error('Chagua picha kwanza.');
+        body.imageBase64 = await fileToBase64(file);
+        body.caption = document.getElementById('dImageCaption').value.trim();
+      } else if (CURRENT_MTYPE === 'video') {
+        const file = document.getElementById('dVideoFile').files[0];
+        if (!file) throw new Error('Chagua video kwanza.');
+        body.videoBase64 = await fileToBase64(file);
+        body.caption = document.getElementById('dVideoCaption').value.trim();
+      } else if (CURRENT_MTYPE === 'audio') {
+        const file = document.getElementById('dAudioFile').files[0];
+        if (!file) throw new Error('Chagua wimbo/audio kwanza.');
+        body.audioBase64 = await fileToBase64(file);
+        body.audioMimetype = file.type || 'audio/mpeg';
+      }
+
+      const endpoint = CURRENT_SENDMODE === 'status' ? 'group-status' : 'message';
+      const data = await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/${endpoint}`, {
+        method: 'POST', body: JSON.stringify(body),
+      });
+      const label = CURRENT_SENDMODE === 'status' ? 'Status imetumwa' : 'Imetumwa';
+      showToast('dGroupsMsg', true, `${label}: ${data.success} zimefanikiwa, ${data.failed} zimeshindwa.`);
+    } catch (e) {
+      showToast('dGroupsMsg', false, e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+    }
+  }
+
+  async function dSaveSettings() {
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/settings`, {
+        method: 'POST',
+        body: JSON.stringify({ prefix: document.getElementById('dPrefix').value.trim(), botName: document.getElementById('dBotName').value.trim() }),
+      });
+      showToast('dSettingsMsg', true, 'Mipangilio imehifadhiwa.');
+    } catch (e) {
+      showToast('dSettingsMsg', false, e.message);
+    }
+  }
+
+  function dClearSettings() {
+    document.getElementById('dPrefix').value = '';
+    document.getElementById('dBotName').value = '';
+    dSaveSettings();
+  }
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+  function escapeAttr(s) {
+    return String(s ?? '').replace(/'/g, '&#39;');
+  }
+
+  // "🔗 Links za Groups" — inapata invite link ya group MOJA kwa wakati mmoja
+  // (kila kitufe kinajitegemea), ili kuepuka kuomba WhatsApp links nyingi kwa
+  // pamoja mara moja (rate limit ikiwa bot ina groups nyingi).
+  async function dFetchGroupLink(groupId, btn) {
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '⏳ ...';
+    try {
+      const data = await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/group-link?groupId=${encodeURIComponent(groupId)}`);
+      const row = btn.closest('.group-row');
+      const box = document.createElement('div');
+      box.className = 'glink-box';
+      box.innerHTML = `
+        <input type="text" readonly value="${escapeAttr(data.link)}" onclick="this.select()" />
+        <button class="ghost" onclick="navigator.clipboard.writeText('${escapeAttr(data.link)}')">Copy</button>
+      `;
+      row.appendChild(box);
+      btn.remove();
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      showToast('dSettingsMsg', false, e.message);
+    }
+  }
+
+  // "🔍 Angalia Namba" — sawa na command ya .getpp lakini kutoka dashboard:
+  // jina, picha ya profile, na groups (miongoni mwa za bot hii) ambazo
+  // namba husika ipo.
+  async function dLookupNumber(btn) {
+    const raw = document.getElementById('dLookupNumber').value.trim();
+    document.getElementById('dLookupMsg').className = 'toast';
+    document.getElementById('dLookupMsg').textContent = '';
+    const resultBox = document.getElementById('dLookupResult');
+    if (!raw) return showToast('dLookupMsg', false, 'Weka namba kwanza.');
+
+    const originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Inatafuta (bots zote)...';
+    resultBox.innerHTML = '';
+    try {
+      // Global — inapekua GROUPS ZA BOT ZOTE zinazoendesha, si za mteja
+      // huyu tu, kwa hiyo haitegemei CURRENT_PHONE.
+      const data = await api(`/api/admin/lookup-number`, {
+        method: 'POST',
+        body: JSON.stringify({ number: raw }),
+      });
+
+      const avatarHtml = data.ppUrl
+        ? `<img class="lookup-avatar" src="${escapeAttr(data.ppUrl)}" onerror="this.outerHTML='<div class=&quot;lookup-avatar lookup-avatar-fallback&quot;>👤</div>'" />`
+        : `<div class="lookup-avatar lookup-avatar-fallback">👤</div>`;
+
+      const groupsHtml = data.groups.length
+        ? data.groups.map(g => `
+            <div class="group-row">
+              <div style="flex:1;min-width:0;">
+                <div class="gn">${escapeHtml(g.subject)}</div>
+                <div class="gc">kupitia bot ${escapeHtml(g.viaBot)} · washiriki ${g.participants}</div>
+              </div>
+              ${g.link
+                ? `<div class="glink-box"><input type="text" readonly value="${escapeAttr(g.link)}" onclick="this.select()" /><button class="ghost" onclick="navigator.clipboard.writeText('${escapeAttr(g.link)}')">Copy</button></div>`
+                : `<div class="glink-box"><span class="empty" style="padding:4px 0;">⚠️ ${escapeHtml(g.linkError || 'Link haipatikani')}</span></div>`}
+            </div>
+          `).join('')
+        : `<div class="empty">Namba hii haipo kwenye group yoyote ya bots zetu.</div>`;
+
+      resultBox.innerHTML = `
+        <div class="lookup-card">
+          ${avatarHtml}
+          <div>
+            <div class="lookup-name">${escapeHtml(data.name)}</div>
+            <div class="lookup-number">+${escapeHtml(data.number)}</div>
+          </div>
+        </div>
+        <div class="section-label">Groups Alizomo (${data.groups.length}) — bots ${data.scannedBots} zilizopekuliwa</div>
+        <div class="group-list">${groupsHtml}</div>
+        ${data.scanErrors && data.scanErrors.length ? `<div class="empty">⚠️ Baadhi ya bots hazikupekuliwa kikamilifu: ${escapeHtml(data.scanErrors.join(' · '))}</div>` : ''}
+      `;
+    } catch (e) {
+      showToast('dLookupMsg', false, e.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+
+  async function dMarkPaid() {
+    const days = prompt('Siku ngapi za malipo?', '30');
+    if (!days) return;
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/mark-paid`, { method: 'POST', body: JSON.stringify({ days: Number(days) }) });
+      showToast('dBillingMsg', true, 'Amewekwa amelipa.');
+      await loadUsers();
+      refreshBillingPane();
+    } catch (e) {
+      showToast('dBillingMsg', false, e.message);
+    }
+  }
+
+  async function dExtendTrial() {
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/extend-trial`, { method: 'POST', body: JSON.stringify({ days: 1 }) });
+      showToast('dBillingMsg', true, 'Trial imeongezwa siku 1.');
+      await loadUsers();
+      refreshBillingPane();
+    } catch (e) {
+      showToast('dBillingMsg', false, e.message);
+    }
+  }
+
+  async function dToggleBlock() {
+    const u = ALL_USERS.find(x => x.phoneNumber === CURRENT_PHONE);
+    try {
+      await api(`/api/admin/users/${encodeURIComponent(CURRENT_PHONE)}/block`, { method: 'POST', body: JSON.stringify({ blocked: !u.blocked }) });
+      showToast('dBillingMsg', true, u.blocked ? 'Amefunguliwa.' : 'Amezuiwa.');
+      await loadUsers();
+      refreshBillingPane();
+    } catch (e) {
+      showToast('dBillingMsg', false, e.message);
+    }
+  }
+
+  function showApp() {
+    document.getElementById('loginCard').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadUsers();
+    setInterval(loadUsers, 15000);
+    setInterval(() => {
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('sw-TZ');
+    }, 1000);
+  }
+
+  if (ADMIN_TOKEN) showApp();
+</script>
+</body>
+</html>

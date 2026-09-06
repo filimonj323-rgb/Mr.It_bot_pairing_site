@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard ya Bot Yako</title>
+<style>
+  :root {
+    --purple: #9C27B0;
+    --purple-light: #c084dc;
+    --purple-dark: #6a1b7a;
+    --bg: #0c0e13;
+    --card: #171a21;
+    --card-hover: #1c2028;
+    --field: #10131a;
+    --text: #f2f2f5;
+    --muted: #8b90a0;
+    --border: #262a35;
+    --success: #4caf50;
+    --error: #e05555;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(circle at top, #171a24 0%, var(--bg) 55%);
+    color: var(--text);
+    padding: 16px 16px 40px;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; }
+
+  .top-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding: 4px 2px;
+  }
+  .top-header .logo {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .top-header h2 { font-size: 16px; margin: 0; }
+  .top-header p { font-size: 12px; color: var(--muted); margin: 2px 0 0; }
+
+  /* Top-level section switcher */
+  .section-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 18px;
+    background: var(--card);
+    padding: 6px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .section-tab {
+    flex: 1;
+    min-width: 62px;
+    text-align: center;
+    padding: 10px 4px;
+    border-radius: 10px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.4;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .section-tab .icon { font-size: 17px; display: block; margin-bottom: 2px; }
+  .section-tab.active { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); color: white; }
+  .section { display: none; animation: fadeIn 0.2s ease; }
+  .section.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+  }
+  h1 { font-size: 19px; margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+  p.sub { color: var(--muted); font-size: 13px; margin: 0 0 20px; line-height: 1.5; }
+  label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; font-weight: 600; letter-spacing: 0.2px; }
+  select, textarea, input[type="file"], input[type="text"], input[type="range"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--field);
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 14px;
+    font-family: inherit;
+  }
+  select:focus, textarea:focus, input:focus { outline: none; border-color: var(--purple); }
+  textarea { resize: vertical; min-height: 68px; }
+  input[type="file"] { padding: 10px; font-size: 12.5px; }
+  .file-preview {
+    display: none;
+    margin: -6px 0 14px;
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--field);
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--purple), var(--purple-dark));
+    color: white;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.08s ease, opacity 0.15s ease;
+  }
+  button:active:not(:disabled) { transform: scale(0.98); }
+  button.secondary {
+    background: transparent;
+    border: 1px solid var(--purple);
+    color: var(--purple-light);
+    margin-top: 8px;
+  }
+  button.ghost {
+    background: var(--field);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  button.small { width: auto; padding: 8px 14px; font-size: 12.5px; }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+  .msg {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    display: none;
+    line-height: 1.5;
+  }
+  .msg.success { background: rgba(76,175,80,0.12); color: var(--success); display: block; }
+  .msg.error { background: rgba(224,85,85,0.12); color: var(--error); display: block; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; background: var(--field); padding: 4px; border-radius: 10px; }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 9px 6px;
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: background 0.15s ease;
+  }
+  .tab.active { background: var(--purple); color: white; }
+
+  /* Multi-select group checklist */
+  .group-list {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--field);
+    margin-bottom: 10px;
+  }
+  .group-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .group-row:last-child { border-bottom: none; }
+  .group-row:hover { background: var(--card-hover); }
+  .group-row input { width: 17px; height: 17px; accent-color: var(--purple); flex-shrink: 0; }
+  .group-row .g-name { flex: 1; }
+  .group-row .g-count { color: var(--muted); font-size: 11px; }
+  .group-list-actions {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--purple-light);
+    margin-bottom: 16px;
+  }
+  .group-list-actions span { cursor: pointer; }
+  .selected-count { font-size: 12px; color: var(--muted); margin: -10px 0 16px; }
+
+  /* Downloads section */
+  .dl-type-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .preview-card {
+    display: none;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    background: var(--field);
+  }
+  .preview-card img { width: 100%; display: block; max-height: 190px; object-fit: cover; }
+  .preview-info { padding: 12px 14px; }
+  .preview-info .p-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .preview-info .p-meta { font-size: 12px; color: var(--muted); }
+
+  /* Toggle switches (automation / protection) */
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .switch .slider {
+    position: absolute; inset: 0; cursor: pointer;
+    background: var(--field); border: 1px solid var(--border);
+    border-radius: 24px; transition: 0.2s;
+  }
+  .switch .slider::before {
+    content: ""; position: absolute; height: 18px; width: 18px; left: 2px; top: 2px;
+    background: var(--muted); border-radius: 50%; transition: 0.2s;
+  }
+  .switch input:checked + .slider { background: var(--purple-dark); border-color: var(--purple); }
+  .switch input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 13.5px; }
+  .toggle-hint { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+  /* Settings section — sub-navigation between Msingi / Otomatiki / Ulinzi */
+  .settings-nav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: var(--field);
+    padding: 4px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .settings-nav-item {
+    flex: 1;
+    text-align: center;
+    padding: 10px 4px;
+    border-radius: 9px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .settings-nav-item .icon { font-size: 14px; }
+  .settings-nav-item.active { background: linear-gradient(135deg, var(--purple), var(--purple-dark)); color: white; }
+  .settings-pane { display: none; animation: fadeIn 0.2s ease; }
+  .settings-pane.active { display: block; }
+
+  .protect-block { border-bottom: 1px solid var(--border); padding: 4px 0 10px; }
+  .protect-block:last-of-type { border-bottom: none; }
+  .protect-groups { padding: 6px 0 4px; }
+  .protect-hint { font-size: 11.5px; color: var(--muted); margin: -4px 0 10px; }
+
+  /* Auto-Forward rule builder (Settings → Otomatiki) */
+  .af-panel { margin-top: 16px; border-top: 1px dashed var(--border); padding-top: 16px; }
+  .af-rule-card {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--field);
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .af-rule-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+  .af-rule-route { font-size: 13px; font-weight: 600; line-height: 1.5; }
+  .af-rule-route .arrow { color: var(--purple-light); }
+  .af-rule-meta { font-size: 11.5px; color: var(--muted); margin-bottom: 8px; }
+  .af-rule-actions { display: flex; gap: 8px; }
+  .af-rule-actions button { width: auto; }
+  .af-rule-actions .danger { border-color: var(--error); color: var(--error); }
+
+  /* Downloads section — Play + Pakua side by side */
+  .dl-actions { display: flex; gap: 10px; }
+  .dl-actions button { margin-top: 0; }
+  .dl-player { display: none; margin: 0 0 14px; }
+  .dl-player audio, .dl-player video { width: 100%; display: block; border-radius: 10px; background: #000; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top-header">
+    <div class="logo">🕊️</div>
+    <div>
+      <h2>V.I.P WHATSAPP FOR PRO!</h2>
+      <p>Dhibiti whatsapp yako popote ulipo</p>
+    </div>
+  </div>
+
+  <div class="section-tabs">
+    <div class="section-tab active" data-section="status"><span class="icon">📤</span>Status</div>
+    <div class="section-tab" data-section="broadcast"><span class="icon">📢</span>Groups</div>
+    <div class="section-tab" data-section="downloads"><span class="icon">⬇️</span>Downloads</div>
+    <div class="section-tab" data-section="settings"><span class="icon">⚙️</span>Settings</div>
+    <div class="section-tab" data-section="billing"><span class="icon">💳</span>Malipo</div>
+  </div>
+
+  <!-- ============ SECTION 1: Group Status ============ -->
+  <div class="section active" id="section-status">
+    <div class="card">
+      <h1>📤 Tuma Group Status</h1>
+      <p class="sub">Chagua group, andika au ambatanisha picha/video, kisha tuma.</p>
+
+      <label>Chagua Groups</label>
+      <div class="group-list" id="sGroupList">
+        <div class="group-row" style="justify-content:center;color:var(--muted);">Inapakia groups...</div>
+      </div>
+      <div class="group-list-actions">
+        <span id="sSelectAll">☑️ Chagua Zote</span>
+        <span id="sSelectNone">⬜ Ondoa Zote</span>
+      </div>
+      <div class="selected-count" id="sSelectedCount">Umechagua groups: 0</div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="text" data-group="status">📝 Text</div>
+        <div class="tab" data-tab="media" data-group="status">🖼️🎬 Picha/Video</div>
+      </div>
+
+      <div id="textTab">
+        <label for="textInput">Maandishi</label>
+        <textarea id="textInput" placeholder="Andika status yako hapa..." rows="6"></textarea>
+      </div>
+
+      <div id="mediaTab" style="display:none;">
+        <label for="mediaInput">Chagua picha au video</label>
+        <input type="file" id="mediaInput" accept="image/*,video/*" />
+        <div class="file-preview" id="filePreview"></div>
+        <label for="captionInput">Caption (hiari)</label>
+        <textarea id="captionInput" placeholder="Maelezo mafupi (si lazima)..." rows="6"></textarea>
+      </div>
+
+      <button id="postBtn">Tuma Status</button>
+      <div class="msg" id="msgBox"></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 2: Broadcast to multiple groups ============ -->
+  <div class="section" id="section-broadcast">
+    <div class="card">
+      <h1>📢 Tuma Ujumbe kwa Groups</h1>
+      <p class="sub">Chagua groups moja au zaidi, kisha tuma maandishi, picha au video.</p>
+
+      <label>Chagua Groups</label>
+      <div class="group-list" id="bGroupList">
+        <div class="group-row" style="justify-content:center;color:var(--muted);">Inapakia groups...</div>
+      </div>
+      <div class="group-list-actions">
+        <span id="bSelectAll">☑️ Chagua Zote</span>
+        <span id="bSelectNone">⬜ Ondoa Zote</span>
+      </div>
+      <div class="selected-count" id="bSelectedCount">Umechagua groups: 0</div>
+
+      <div class="tabs">
+        <div class="tab active" data-tab="text" data-group="broadcast">📝 Text</div>
+        <div class="tab" data-tab="media" data-group="broadcast">🖼️🎬 Picha/Video</div>
+      </div>
+
+      <div id="bTextTab">
+        <label for="bTextInput">Maandishi</label>
+        <textarea id="bTextInput" placeholder="Andika ujumbe wako hapa..." rows="6"></textarea>
+      </div>
+
+      <div id="bMediaTab" style="display:none;">
+        <label for="bMediaInput">Chagua picha au video</label>
+        <input type="file" id="bMediaInput" accept="image/*,video/*" />
+        <div class="file-preview" id="bFilePreview"></div>
+        <label for="bCaptionInput">Caption (hiari)</label>
+        <textarea id="bCaptionInput" placeholder="Maelezo mafupi (si lazima)..." rows="6"></textarea>
+      </div>
+
+      <button id="bSendBtn">Tuma kwa Groups Nilizochagua</button>
+      <div class="msg" id="bMsgBox"></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 3: Downloads (MP3/MP4) ============ -->
+  <div class="section" id="section-downloads">
+    <div class="card">
+      <h1>⬇️ Pakua Muziki / Video</h1>
+      <p class="sub">Andika jina la wimbo/video au bandika link ya YouTube, kisha angalia preview kabla ya kupakua.</p>
+
+      <div class="dl-type-tabs">
+        <div class="tab active" data-dltype="mp3">🎵 MP3</div>
+        <div class="tab" data-dltype="mp4">🎬 MP4</div>
+      </div>
+
+      <label for="dlInput">Jina la wimbo/video au link</label>
+      <input type="text" id="dlInput" placeholder="Mfano: Marioo Pombe, au https://youtube.com/..." />
+
+      <button id="dlSearchBtn">🔍 Tafuta / Preview</button>
+
+      <div class="preview-card" id="dlPreview">
+        <img id="dlThumb" src="" alt="thumbnail" />
+        <div class="preview-info">
+          <div class="p-title" id="dlTitle"></div>
+          <div class="p-meta" id="dlMeta"></div>
+        </div>
+      </div>
+
+      <div class="dl-player" id="dlPlayerWrap">
+        <audio id="dlAudioPlayer" controls style="display:none;"></audio>
+        <video id="dlVideoPlayer" controls playsinline style="display:none;"></video>
+      </div>
+
+      <div class="dl-actions">
+        <button class="secondary" id="dlPlayBtn" style="display:none;">▶️ Cheza Kwanza</button>
+        <button class="secondary" id="dlDownloadBtn" style="display:none;">⬇️ Pakua Sasa</button>
+      </div>
+
+      <div class="msg" id="dlMsgBox"></div>
+    </div>
+  </div>
+
+  <!-- ============ SECTION 4: Settings (prefix / bot name — optional) ============ -->
+  <div class="section" id="section-settings">
+
+    <div class="settings-nav">
+      <div class="settings-nav-item active" data-settings-tab="basic"><span class="icon">🪪</span>Msingi</div>
+      <div class="settings-nav-item" data-settings-tab="automation"><span class="icon">🔘</span>Otomatiki</div>
+      <div class="settings-nav-item" data-settings-tab="protection"><span class="icon">🛡️</span>Ulinzi</div>
+    </div>
+
+    <div class="settings-pane active" id="settingspane-basic">
+    <div class="card">
+      <h1>🪪 Settings za Msingi</h1>
+      <p class="sub">Hiari — acha wazi kama hutaki kubadilisha, bot itaendelea kutumia default.</p>
+
+      <label for="setPrefix">Prefix (herufi 1-3, mfano: . au ! au #)</label>
+      <input type="text" id="setPrefix" maxlength="3" placeholder="Default: !" />
+
+      <label for="setBotName">Jina la Bot</label>
+      <input type="text" id="setBotName" maxlength="40" placeholder="Default: MR.IT MEDIATOR" />
+
+      <button id="setSaveBtn">💾 Hifadhi Settings</button>
+      <button class="secondary" id="setClearBtn">↩️ Rudisha Default</button>
+
+      <div class="msg" id="setMsgBox"></div>
+    </div>
+    </div>
+
+    <!-- ---- Automation toggles ---- -->
+    <div class="settings-pane" id="settingspane-automation">
+    <div class="card">
+      <h1>🔘 Vipengele vya Kiotomatiki</h1>
+      <p class="sub">Washa au zima huduma hizi za bot kiotomatiki. Zinatumika kwa jumla (si group moja moja). Mabadiliko yanaanza kufanya kazi papo hapo.</p>
+
+      <div class="toggle-row">
+        <div>
+          <span class="toggle-label">👁️ Auto View Status</span>
+          <div class="toggle-hint">Bot itaangalia (view) status za watu kiotomatiki</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="tg_autoViewStatus"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <span class="toggle-label">❤️ Auto React Status</span>
+          <div class="toggle-hint">Bot itapenda/kureact status za watu kiotomatiki</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="tg_autoReactStatus"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <span class="toggle-label">⌨️ Auto Typing</span>
+          <div class="toggle-hint">Bot itaonesha "inaandika..." kabla ya kujibu amri</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="tg_autoTyping"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <span class="toggle-label">🎙️ Auto Recording</span>
+          <div class="toggle-hint">Bot itaonesha "inarekodi sauti..." unapotuma ujumbe</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="tg_autoRecording"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <span class="toggle-label">😊 Auto React Messages</span>
+          <div class="toggle-hint">Bot itareact kila ujumbe unaotumwa kwake</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="tg_autoReactMessages"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <span class="toggle-label">📤 Auto Forward Messages</span>
+          <div class="toggle-hint">Peleka ujumbe kiotomatiki kutoka group moja kwenda nyingine, kufuatana na rules ulizoweka kwa amri ya WhatsApp <code>.autoforward</code> (tuma <code>.autoforward help</code> kwenye inbox ya bot yako kuziweka/kuzitazama). Zima huku ukitaka kusimamisha uforwardaji wote papo hapo bila kufuta rules zako.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="tg_autoForwardMessages"><span class="slider"></span></label>
+      </div>
+
+      <div class="msg" id="autoMsgBox"></div>
+
+      <!-- ---- Auto Forward: source/destination rule builder ---- -->
+      <div class="af-panel">
+        <label>📥 Chanzo (Source Group)</label>
+        <select id="afSource"><option value="">Inapakia groups...</option></select>
+
+        <label>📤 Pa Kupelekea (Destination)</label>
+        <div class="tabs">
+          <div class="tab active" data-af-dest="group">Group Nyingine</div>
+          <div class="tab" data-af-dest="custom">Weka ID Mwenyewe</div>
+        </div>
+        <select id="afDestGroup"><option value="">Inapakia groups...</option></select>
+        <input type="text" id="afDestCustom" style="display:none;" placeholder="Mfano: 255xxxxxxxxx-xxxxxxxxxx@g.us au channel ID" />
+
+        <label>🎯 Nani Atrigger Uforwardaji?</label>
+        <div class="tabs">
+          <div class="tab active" data-af-mode="alladmin">👑 Admin Yeyote</div>
+          <div class="tab" data-af-mode="numbers">🔢 Namba Maalum</div>
+        </div>
+        <input type="text" id="afNumbers" style="display:none;" placeholder="Namba, tenganisha kwa comma: 255712345678,255789111222" />
+        <div class="toggle-hint" id="afModeHint" style="margin: -8px 0 14px;">Ujumbe utaforwardiwa ukitumwa na ADMIN YEYOTE wa group ya chanzo.</div>
+
+        <button id="afSaveBtn">💾 Hifadhi Rule</button>
+        <div class="msg" id="afMsgBox"></div>
+
+        <div id="afRulesList" style="margin-top: 6px;"></div>
+      </div>
+    </div>
+    </div>
+
+    <!-- ---- Group-wise protection (anti-features) ---- -->
+    <div class="settings-pane" id="settingspane-protection">
+    <div class="card">
+      <h1>🛡️ Ulinzi wa Groups</h1>
+      <p class="sub">Washa kipengele kisha chagua groups zitakazolindwa nacho. Kila kipengele kina groups zake tofauti.</p>
+
+      <div class="protect-block" data-feature="antiGroupMention">
+        <div class="toggle-row">
+          <span class="toggle-label">🚫 Anti Group Mention</span>
+          <label class="switch"><input type="checkbox" class="protectToggle"><span class="slider"></span></label>
+        </div>
+        <div class="protect-groups" style="display:none;">
+          <div class="protect-hint">Chagua groups zitakazowasha ulinzi huu</div>
+          <div class="group-list" data-list>
+            <div class="group-row" style="justify-content:center;color:var(--muted);">Inapakia groups...</div>
+          </div>
+          <div class="group-list-actions">
+            <span data-action="all">☑️ Chagua Zote</span>
+            <span data-action="none">⬜ Ondoa Zote</span>
+          </div>
+          <div class="selected-count" data-count>Umechagua groups: 0</div>
+        </div>
+      </div>
+
+      <div class="protect-block" data-feature="antiPromo">
+        <div class="toggle-row">
+          <span class="toggle-label">📵 Anti Promo</span>
+          <label class="switch"><input type="checkbox" class="protectToggle"><span class="slider"></span></label>
+        </div>
+        <div class="protect-groups" style="display:none;">
+          <div class="protect-hint">Chagua groups zitakazowasha ulinzi huu</div>
+          <div class="group-list" data-list>
+            <div class="group-row" style="justify-content:center;color:var(--muted);">Inapakia groups...</div>
+          </div>
+          <div class="group-list-actions">
+            <span data-action="all">☑️ Chagua Zote</span>
+            <span data-action="none">⬜ Ondoa Zote</span>
+          </div>
+          <div class="selected-count" data-count>Umechagua groups: 0</div>
+        </div>
+      </div>
+
+      <div class="protect-block" data-feature="antiLink">
+        <div class="toggle-row">
+          <span class="toggle-label">🔗 Anti Link</span>
+          <label class="switch"><input type="checkbox" class="protectToggle"><span class="slider"></span></label>
+        </div>
+        <div class="protect-groups" style="display:none;">
+          <div class="protect-hint">Chagua groups zitakazowasha ulinzi huu</div>
+          <div class="group-list" data-list>
+            <div class="group-row" style="justify-content:center;color:var(--muted);">Inapakia groups...</div>
+          </div>
+          <div class="group-list-actions">
+            <span data-action="all">☑️ Chagua Zote</span>
+            <span data-action="none">⬜ Ondoa Zote</span>
+          </div>
+          <div class="selected-count" data-count>Umechagua groups: 0</div>
+        </div>
+      </div>
+
+      <button id="protectSaveBtn">💾 Hifadhi Ulinzi</button>
+      <div class="msg" id="protectMsgBox"></div>
+    </div>
+    </div>
+
+  </div>
+
+  <!-- ============ SECTION 5: Billing / Malipo ============ -->
+  <div class="section" id="section-billing">
+    <div class="card">
+      <h1>💳 Malipo</h1>
+      <p class="sub" id="billingStatusText">Inaangalia hali yako...</p>
+
+      <label for="payPhoneInput">Namba ya Kulipia (Mobile Money)</label>
+      <input type="text" id="payPhoneInput" placeholder="255XXXXXXXXX" inputmode="numeric" />
+
+      <div id="plansGrid" style="display:flex;flex-direction:column;gap:10px;"></div>
+
+      <div class="msg" id="billingMsgBox"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // 🔧 Badilisha URL hii iwe ya Railway app yako mwenyewe (bila "/" mwishoni)
+  const API_BASE = "https://jina-la-bot-yako.up.railway.app";
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+
+  // ---------- Top-level section switching ----------
+  function openSection(name) {
+    const btn = document.querySelector('.section-tab[data-section="' + name + '"]');
+    const pane = document.getElementById('section-' + name);
+    if (!btn || !pane) return false;
+    document.querySelectorAll('.section-tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+    btn.classList.add('active');
+    pane.classList.add('active');
+    return true;
+  }
+
+  document.querySelectorAll('.section-tab').forEach(t => {
+    t.addEventListener('click', () => openSection(t.dataset.section));
+  });
+
+  // Linki ya malipo kutoka WhatsApp inaongeza "&section=billing" ili
+  // dashboard ifunguke moja kwa moja kwenye tab ya "Malipo" (badala ya
+  // mteja kulazimika kuibofya mwenyewe).
+  const initialSection = params.get('section');
+  if (initialSection) openSection(initialSection);
+
+  // ---------- Settings sub-tabs (Msingi / Otomatiki / Ulinzi) ----------
+  document.querySelectorAll('.settings-nav-item').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.settings-nav-item').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.settings-pane').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      document.getElementById('settingspane-' + t.dataset.settingsTab).classList.add('active');
+    });
+  });
+
+  // ---------- Shared success/error message helper ----------
+  // Every dashboard action (status post, broadcast, downloads, settings,
+  // automation, protection, billing) uses this so a success message stays
+  // visible for at least 30 seconds instead of vanishing the instant the
+  // user taps elsewhere — long enough to actually notice it worked.
+  const MIN_MSG_VISIBLE_MS = 30000;
+  function showMsg(el, ok, text) {
+    if (el._hideTimer) {
+      clearTimeout(el._hideTimer);
+      el._hideTimer = null;
+    }
+    el.className = 'msg ' + (ok ? 'success' : 'error');
+    el.style.display = 'block';
+    el.textContent = text;
+    el._hideTimer = setTimeout(() => {
+      el.style.display = 'none';
+      el._hideTimer = null;
+    }, MIN_MSG_VISIBLE_MS);
+  }
+
+  function fileToBase64(fileOrBlob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(fileOrBlob);
+    });
+  }
+
+  if (!token) {
+    ['msgBox', 'bMsgBox', 'dlMsgBox', 'setMsgBox'].forEach(id => {
+      const el = document.getElementById(id);
+      el.className = 'msg error';
+      el.textContent = '❌ Link hii haina token. Tumia link uliyopewa baada ya kuunganisha.';
+    });
+    document.getElementById('postBtn').disabled = true;
+    document.getElementById('bSendBtn').disabled = true;
+    document.getElementById('dlSearchBtn').disabled = true;
+    document.getElementById('setSaveBtn').disabled = true;
+    document.getElementById('setClearBtn').disabled = true;
+  }
+
+  /* =========================================================
+     SECTION 1 — Group Status
+     ========================================================= */
+  const sGroupList = document.getElementById('sGroupList');
+  const sSelectAll = document.getElementById('sSelectAll');
+  const sSelectNone = document.getElementById('sSelectNone');
+  const sSelectedCount = document.getElementById('sSelectedCount');
+  const textTab = document.getElementById('textTab');
+  const mediaTab = document.getElementById('mediaTab');
+  const textInput = document.getElementById('textInput');
+  const mediaInput = document.getElementById('mediaInput');
+  const captionInput = document.getElementById('captionInput');
+  const filePreview = document.getElementById('filePreview');
+  const postBtn = document.getElementById('postBtn');
+  const msgBox = document.getElementById('msgBox');
+  let activeTab = 'text';
+
+  document.querySelectorAll('.tab[data-group="status"]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab[data-group="status"]').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeTab = tab.dataset.tab;
+      textTab.style.display = activeTab === 'text' ? 'block' : 'none';
+      mediaTab.style.display = activeTab === 'media' ? 'block' : 'none';
+    });
+  });
+
+  mediaInput.addEventListener('change', () => {
+    const file = mediaInput.files[0];
+    if (file) {
+      filePreview.style.display = 'block';
+      filePreview.textContent = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+    } else {
+      filePreview.style.display = 'none';
+    }
+  });
+
+  let allGroups = [];
+
+  function updateSelectedCountStatus() {
+    const checked = sGroupList.querySelectorAll('input[type="checkbox"]:checked').length;
+    sSelectedCount.textContent = 'Umechagua groups: ' + checked;
+  }
+
+  function renderStatusGroups(groups) {
+    if (!groups.length) {
+      sGroupList.innerHTML = '<div class="group-row" style="justify-content:center;color:var(--muted);">Hakuna groups zilizopatikana</div>';
+      updateSelectedCountStatus();
+      return;
+    }
+    sGroupList.innerHTML = groups.map(g => `
+      <label class="group-row">
+        <input type="checkbox" value="${g.id}" />
+        <span class="g-name">${g.subject}</span>
+        <span class="g-count">${g.participants} members</span>
+      </label>
+    `).join('');
+    sGroupList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', updateSelectedCountStatus);
+    });
+    updateSelectedCountStatus();
+  }
+
+  sSelectAll.addEventListener('click', () => {
+    sGroupList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+    updateSelectedCountStatus();
+  });
+  sSelectNone.addEventListener('click', () => {
+    sGroupList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    updateSelectedCountStatus();
+  });
+
+  async function loadGroups() {
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/groups');
+      const data = await res.json();
+      if (!data.ok) {
+        renderStatusGroups([]);
+        renderBroadcastGroups([]);
+        return;
+      }
+      allGroups = data.groups || [];
+      renderStatusGroups(allGroups);
+      renderBroadcastGroups(allGroups);
+    } catch (e) {
+      renderStatusGroups([]);
+      renderBroadcastGroups([]);
+    }
+  }
+
+  postBtn.addEventListener('click', async () => {
+    msgBox.style.display = 'none';
+
+    const groupIds = Array.from(sGroupList.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+    if (!groupIds.length) {
+      showMsg(msgBox, false, '❌ Chagua group moja au zaidi kwanza.');
+      return;
+    }
+
+    const payload = { groupIds };
+
+    if (activeTab === 'text') {
+      const text = textInput.value.trim();
+      if (!text) {
+        showMsg(msgBox, false, '❌ Andika maandishi kwanza.');
+        return;
+      }
+      payload.text = text;
+    } else {
+      const file = mediaInput.files[0];
+      if (!file) {
+        showMsg(msgBox, false, '❌ Chagua picha au video kwanza.');
+        return;
+      }
+      if (file.type.startsWith('video/')) {
+        payload.videoBase64 = await fileToBase64(file);
+        payload.caption = captionInput.value.trim();
+      } else {
+        payload.imageBase64 = await fileToBase64(file);
+        payload.caption = captionInput.value.trim();
+      }
+    }
+
+    postBtn.disabled = true;
+    postBtn.textContent = 'Inatuma...';
+
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/groupstatus', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        showMsg(msgBox, false, '❌ ' + (data.error || 'Hitilafu imetokea.'));
+      } else {
+        showMsg(msgBox, true, `✅ Imetumwa! Imefanikiwa: ${data.success}/${data.total}`);
+        textInput.value = '';
+        mediaInput.value = '';
+        captionInput.value = '';
+        filePreview.style.display = 'none';
+      }
+    } catch (e) {
+      showMsg(msgBox, false, '❌ Imeshindwa kuwasiliana na server.');
+    } finally {
+      postBtn.disabled = false;
+      postBtn.textContent = 'Tuma Status';
+    }
+  });
+
+  /* =========================================================
+     SECTION 2 — Broadcast to multiple selected groups
+     ========================================================= */
+  const bGroupList = document.getElementById('bGroupList');
+  const bSelectAll = document.getElementById('bSelectAll');
+  const bSelectNone = document.getElementById('bSelectNone');
+  const bSelectedCount = document.getElementById('bSelectedCount');
+  const bTextTab = document.getElementById('bTextTab');
+  const bMediaTab = document.getElementById('bMediaTab');
+  const bTextInput = document.getElementById('bTextInput');
+  const bMediaInput = document.getElementById('bMediaInput');
+  const bCaptionInput = document.getElementById('bCaptionInput');
+  const bFilePreview = document.getElementById('bFilePreview');
+  const bSendBtn = document.getElementById('bSendBtn');
+  const bMsgBox = document.getElementById('bMsgBox');
+  let bActiveTab = 'text';
+
+  document.querySelectorAll('.tab[data-group="broadcast"]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab[data-group="broadcast"]').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      bActiveTab = tab.dataset.tab;
+      bTextTab.style.display = bActiveTab === 'text' ? 'block' : 'none';
+      bMediaTab.style.display = bActiveTab === 'media' ? 'block' : 'none';
+    });
+  });
+
+  bMediaInput.addEventListener('change', () => {
+    const file = bMediaInput.files[0];
+    if (file) {
+      bFilePreview.style.display = 'block';
+      bFilePreview.textContent = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+    } else {
+      bFilePreview.style.display = 'none';
+    }
+  });
+
+  function updateSelectedCount() {
+    const checked = bGroupList.querySelectorAll('input[type="checkbox"]:checked').length;
+    bSelectedCount.textContent = 'Umechagua groups: ' + checked;
+  }
+
+  function renderBroadcastGroups(groups) {
+    if (!groups.length) {
+      bGroupList.innerHTML = '<div class="group-row" style="justify-content:center;color:var(--muted);">Hakuna groups zilizopatikana</div>';
+      updateSelectedCount();
+      return;
+    }
+    bGroupList.innerHTML = groups.map(g => `
+      <label class="group-row">
+        <input type="checkbox" value="${g.id}" />
+        <span class="g-name">${g.subject}</span>
+        <span class="g-count">${g.participants} members</span>
+      </label>
+    `).join('');
+    bGroupList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', updateSelectedCount);
+    });
+    updateSelectedCount();
+  }
+
+  bSelectAll.addEventListener('click', () => {
+    bGroupList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+    updateSelectedCount();
+  });
+  bSelectNone.addEventListener('click', () => {
+    bGroupList.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    updateSelectedCount();
+  });
+
+  bSendBtn.addEventListener('click', async () => {
+    bMsgBox.style.display = 'none';
+
+    const groupIds = Array.from(bGroupList.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+    if (!groupIds.length) {
+      showMsg(bMsgBox, false, '❌ Chagua angalau group moja.');
+      return;
+    }
+
+    const payload = { groupIds };
+
+    if (bActiveTab === 'text') {
+      const text = bTextInput.value.trim();
+      if (!text) {
+        showMsg(bMsgBox, false, '❌ Andika maandishi kwanza.');
+        return;
+      }
+      payload.text = text;
+    } else {
+      const file = bMediaInput.files[0];
+      if (!file) {
+        showMsg(bMsgBox, false, '❌ Chagua picha au video kwanza.');
+        return;
+      }
+      if (file.type.startsWith('video/')) {
+        payload.videoBase64 = await fileToBase64(file);
+        payload.caption = bCaptionInput.value.trim();
+      } else {
+        payload.imageBase64 = await fileToBase64(file);
+        payload.caption = bCaptionInput.value.trim();
+      }
+    }
+
+    bSendBtn.disabled = true;
+    bSendBtn.textContent = 'Inatuma...';
+
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        showMsg(bMsgBox, false, '❌ ' + (data.error || 'Hitilafu imetokea.'));
+      } else {
+        showMsg(bMsgBox, true, `✅ Imetumwa! Imefanikiwa: ${data.success}/${data.total} groups`);
+        bTextInput.value = '';
+        bMediaInput.value = '';
+        bCaptionInput.value = '';
+        bFilePreview.style.display = 'none';
+      }
+    } catch (e) {
+      showMsg(bMsgBox, false, '❌ Imeshindwa kuwasiliana na server.');
+    } finally {
+      bSendBtn.disabled = false;
+      bSendBtn.textContent = 'Tuma kwa Groups Nilizochagua';
+    }
+  });
+
+  /* =========================================================
+     SECTION 3 — Downloads (MP3/MP4) with preview
+     ========================================================= */
+  const dlInput = document.getElementById('dlInput');
+  const dlSearchBtn = document.getElementById('dlSearchBtn');
+  const dlPreview = document.getElementById('dlPreview');
+  const dlThumb = document.getElementById('dlThumb');
+  const dlTitle = document.getElementById('dlTitle');
+  const dlMeta = document.getElementById('dlMeta');
+  const dlDownloadBtn = document.getElementById('dlDownloadBtn');
+  const dlPlayBtn = document.getElementById('dlPlayBtn');
+  const dlPlayerWrap = document.getElementById('dlPlayerWrap');
+  const dlAudioPlayer = document.getElementById('dlAudioPlayer');
+  const dlVideoPlayer = document.getElementById('dlVideoPlayer');
+  const dlMsgBox = document.getElementById('dlMsgBox');
+  let dlType = 'mp3';
+  let currentPreview = null;
+
+  function resetDlActionsUI() {
+    dlPreview.style.display = 'none';
+    dlDownloadBtn.style.display = 'none';
+    dlPlayBtn.style.display = 'none';
+    dlPlayerWrap.style.display = 'none';
+    dlAudioPlayer.pause();
+    dlAudioPlayer.removeAttribute('src');
+    dlAudioPlayer.style.display = 'none';
+    dlVideoPlayer.pause();
+    dlVideoPlayer.removeAttribute('src');
+    dlVideoPlayer.style.display = 'none';
+    currentPreview = null;
+  }
+
+  function buildMediaDownloadUrl() {
+    return API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/media-download'
+      + '?type=' + encodeURIComponent(dlType)
+      + '&url=' + encodeURIComponent(currentPreview.url)
+      + '&title=' + encodeURIComponent(currentPreview.title || 'download');
+  }
+
+  document.querySelectorAll('.tab[data-dltype]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab[data-dltype]').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      dlType = tab.dataset.dltype;
+      resetDlActionsUI();
+    });
+  });
+
+  dlSearchBtn.addEventListener('click', async () => {
+    dlMsgBox.className = 'msg';
+    dlMsgBox.style.display = 'none';
+    resetDlActionsUI();
+
+    const input = dlInput.value.trim();
+    if (!input) {
+      showMsg(dlMsgBox, false, '❌ Andika jina la wimbo/video au bandika link kwanza.');
+      return;
+    }
+
+    dlSearchBtn.disabled = true;
+    dlSearchBtn.textContent = 'Inatafuta...';
+
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/media-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input }),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        showMsg(dlMsgBox, false, '❌ ' + (data.error || 'Haikupatikana.'));
+        return;
+      }
+
+      currentPreview = data;
+      dlThumb.src = data.thumbnail || '';
+      dlTitle.textContent = data.title || 'Bila jina';
+      dlMeta.textContent = (data.duration ? '⏱ ' + data.duration + '  •  ' : '') + (data.author || '');
+      dlPreview.style.display = 'block';
+      dlDownloadBtn.style.display = 'block';
+      dlPlayBtn.style.display = 'block';
+    } catch (e) {
+      showMsg(dlMsgBox, false, '❌ Imeshindwa kuwasiliana na server.');
+    } finally {
+      dlSearchBtn.disabled = false;
+      dlSearchBtn.textContent = '🔍 Tafuta / Preview';
+    }
+  });
+
+  // "Cheza Kwanza" — pata link ya moja kwa moja na icheze humo humo kabla
+  // ya kupakua chochote, ili mteja aone/asikie kwanza kama ndicho anachotaka.
+  dlPlayBtn.addEventListener('click', () => {
+    if (!currentPreview) return;
+    const url = buildMediaDownloadUrl();
+
+    dlPlayerWrap.style.display = 'block';
+    dlPlayBtn.disabled = true;
+    dlPlayBtn.textContent = '⏳ Inapakia...';
+
+    if (dlType === 'mp4') {
+      dlAudioPlayer.pause(); dlAudioPlayer.removeAttribute('src'); dlAudioPlayer.style.display = 'none';
+      dlVideoPlayer.style.display = 'block';
+      dlVideoPlayer.src = url;
+      dlVideoPlayer.play().catch(() => {});
+    } else {
+      dlVideoPlayer.pause(); dlVideoPlayer.removeAttribute('src'); dlVideoPlayer.style.display = 'none';
+      dlAudioPlayer.style.display = 'block';
+      dlAudioPlayer.src = url;
+      dlAudioPlayer.play().catch(() => {});
+    }
+
+    showMsg(dlMsgBox, true, '▶️ Ukiridhika, bonyeza "Pakua Sasa" kupakua faili.');
+    dlPlayBtn.disabled = false;
+    dlPlayBtn.textContent = '▶️ Cheza Kwanza';
+  });
+
+  dlDownloadBtn.addEventListener('click', () => {
+    if (!currentPreview) return;
+    showMsg(dlMsgBox, true, '⬇️ Kupakua kunaanza... subiri kidogo, itategemea ukubwa wa faili.');
+    window.location.href = buildMediaDownloadUrl();
+  });
+
+  /* =========================================================
+     SECTION 4 — Settings (prefix / bot name — both optional)
+     ========================================================= */
+  const setPrefix = document.getElementById('setPrefix');
+  const setBotName = document.getElementById('setBotName');
+  const setSaveBtn = document.getElementById('setSaveBtn');
+  const setClearBtn = document.getElementById('setClearBtn');
+  const setMsgBox = document.getElementById('setMsgBox');
+
+  async function loadSettings() {
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/settings');
+      const data = await res.json();
+      if (!data.ok) return;
+      setPrefix.value = data.prefix || '';
+      setBotName.value = data.botName || '';
+      setPrefix.placeholder = 'Default: ' + (data.defaultPrefix || '!');
+      setBotName.placeholder = 'Default: ' + (data.defaultBotName || '');
+    } catch (e) {
+      // Silent — settings tab just stays empty/default on failure.
+    }
+  }
+
+  async function saveSettings(prefix, botName) {
+    setMsgBox.className = 'msg';
+    setMsgBox.style.display = 'none';
+    setSaveBtn.disabled = true;
+    setClearBtn.disabled = true;
+
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefix, botName }),
+      });
+      const data = await res.json();
+
+      if (!data.ok) {
+        showMsg(setMsgBox, false, '❌ ' + (data.error || 'Hitilafu imetokea.'));
+      } else {
+        showMsg(setMsgBox, true, '✅ Settings zimehifadhiwa.');
+        setPrefix.value = data.prefix || '';
+        setBotName.value = data.botName || '';
+      }
+    } catch (e) {
+      showMsg(setMsgBox, false, '❌ Imeshindwa kuwasiliana na server.');
+    } finally {
+      setSaveBtn.disabled = false;
+      setClearBtn.disabled = false;
+    }
+  }
+
+  setSaveBtn.addEventListener('click', () => saveSettings(setPrefix.value.trim(), setBotName.value.trim()));
+  setClearBtn.addEventListener('click', () => saveSettings('', ''));
+
+  /* =========================================================
+     SECTION 4b — Automation toggles (auto view status, n.k.)
+     ========================================================= */
+  const autoToggleIds = ['autoViewStatus', 'autoReactStatus', 'autoTyping', 'autoRecording', 'autoReactMessages', 'autoForwardMessages'];
+  // These default ON for every customer (server treats "not set" as true) —
+  // every other toggle here defaults OFF until a customer opts in.
+  const DEFAULT_ON_TOGGLE_IDS = ['autoViewStatus', 'autoReactStatus', 'autoForwardMessages'];
+  const autoMsgBox = document.getElementById('autoMsgBox');
+
+  async function loadAutomation() {
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/settings');
+      const data = await res.json();
+      if (!data.ok) return;
+      const auto = data.automation || {};
+      autoToggleIds.forEach(id => {
+        const el = document.getElementById('tg_' + id);
+        if (!el) return;
+        el.checked = DEFAULT_ON_TOGGLE_IDS.includes(id) ? (auto[id] !== false) : !!auto[id];
+      });
+    } catch (e) {
+      // Silent — toggles just stay off on failure.
+    }
+  }
+
+  async function saveAutomation() {
+    autoMsgBox.className = 'msg';
+    autoMsgBox.style.display = 'none';
+
+    const payload = {};
+    autoToggleIds.forEach(id => {
+      const el = document.getElementById('tg_' + id);
+      if (el) payload[id] = el.checked;
+    });
+
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/settings/automation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      showMsg(autoMsgBox, !!data.ok, data.ok ? '✅ Imehifadhiwa.' : '❌ ' + (data.error || 'Hitilafu imetokea.'));
+    } catch (e) {
+      showMsg(autoMsgBox, false, '❌ Imeshindwa kuwasiliana na server.');
+    }
+  }
+
+  autoToggleIds.forEach(id => {
+    const el = document.getElementById('tg_' + id);
+    if (el) el.addEventListener('change', saveAutomation);
+  });
+
+  /* =========================================================
+     SECTION 4b-2 — Auto Forward: source/destination rule builder
+     ========================================================= */
+  const afSource = document.getElementById('afSource');
+  const afDestGroup = document.getElementById('afDestGroup');
+  const afDestCustom = document.getElementById('afDestCustom');
+  const afNumbers = document.getElementById('afNumbers');
+  const afModeHint = document.getElementById('afModeHint');
+  const afSaveBtn = document.getElementById('afSaveBtn');
+  const afMsgBox = document.getElementById('afMsgBox');
+  const afRulesList = document.getElementById('afRulesList');
+
+  let afDestMode = 'group'; // 'group' | 'custom'
+  let afTriggerMode = 'alladmin'; // 'alladmin' | 'numbers'
+
+  document.querySelectorAll('.tab[data-af-dest]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab[data-af-dest]').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      afDestMode = tab.dataset.afDest;
+      afDestGroup.style.display = afDestMode === 'group' ? 'block' : 'none';
+      afDestCustom.style.display = afDestMode === 'custom' ? 'block' : 'none';
+    });
+  });
+
+  document.querySelectorAll('.tab[data-af-mode]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab[data-af-mode]').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      afTriggerMode = tab.dataset.afMode;
+      afNumbers.style.display = afTriggerMode === 'numbers' ? 'block' : 'none';
+      afModeHint.style.display = afTriggerMode === 'alladmin' ? 'block' : 'none';
+    });
+  });
+
+  // Chanzo (source) na destination zote zinatumia groups za bot hii hii —
+  // tunatumia `allGroups` ile ile iliyopakiwa na loadGroups() (Status/Groups
+  // tabs), hakuna haja ya kuomba tena kwenye server.
+  function renderAfGroupSelects() {
+    const options = allGroups.length
+      ? allGroups.map(g => `<option value="${g.id}">${g.subject}</option>`).join('')
+      : '<option value="">Hakuna groups zilizopatikana</option>';
+    afSource.innerHTML = '<option value="">-- Chagua group ya chanzo --</option>' + options;
+    afDestGroup.innerHTML = '<option value="">-- Chagua group ya kupelekea --</option>' + options;
+  }
+
+  function renderAfRules(rules) {
+    if (!rules || !rules.length) {
+      afRulesList.innerHTML = '<div class="toggle-hint">Bado hujaweka rule yoyote ya Auto Forward.</div>';
+      return;
+    }
+    afRulesList.innerHTML = rules.map(r => `
+      <div class="af-rule-card" data-source="${r.sourceGroupId}">
+        <div class="af-rule-top">
+          <div class="af-rule-route">${r.sourceName} <span class="arrow">➜</span> ${r.destinationName}</div>
+          <label class="switch"><input type="checkbox" class="afRuleToggle" ${r.enabled ? 'checked' : ''} /><span class="slider"></span></label>
+        </div>
+        <div class="af-rule-meta">
+          ${r.alladmin ? '👑 Admin Yeyote' : '🔢 Namba: ' + (r.numbers.length ? r.numbers.map(n => '+' + n).join(', ') : '-')}
+        </div>
+        <div class="af-rule-actions">
+          <button class="secondary small danger afRuleRemove">🗑️ Futa</button>
+        </div>
+      </div>
+    `).join('');
+
+    afRulesList.querySelectorAll('.af-rule-card').forEach(card => {
+      const sourceGroupId = card.dataset.source;
+
+      card.querySelector('.afRuleToggle').addEventListener('change', async (ev) => {
+        const enabled = ev.target.checked;
+        try {
+          const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/autoforward/toggle', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sourceGroupId, enabled }),
+          });
+          const data = await res.json();
+          if (!data.ok) {
+            ev.target.checked = !enabled;
+            showMsg(afMsgBox, false, '❌ ' + (data.error || 'Hitilafu imetokea.'));
+            return;
+          }
+          renderAfRules(data.rules);
+        } catch (e) {
+          ev.target.checked = !enabled;
+          showMsg(afMsgBox, false, '❌ Imeshindwa kuwasiliana na server.');
+        }
+      });
+
+      card.querySelector('.afRuleRemove').addEventListener('click', async () => {
+        try {
+          const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/autoforward/remove', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sourceGroupId }),
+          });
+          const data = await res.json();
+          if (!data.ok) {
+            showMsg(afMsgBox, false, '❌ ' + (data.error || 'Hitilafu imetokea.'));
+            return;
+          }
+          showMsg(afMsgBox, true, '🗑️ Rule imefutwa.');
+          renderAfRules(data.rules);
+        } catch (e) {
+          showMsg(afMsgBox, false, '❌ Imeshindwa kuwasiliana na server.');
+        }
+      });
+    });
+  }
+
+  async function loadAutoForward() {
+    renderAfGroupSelects();
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/autoforward');
+      const data = await res.json();
+      if (!data.ok) return;
+      renderAfRules(data.rules);
+    } catch (e) {
+      // Silent — orodha ya rules inabaki tupu ikishindikana.
+    }
+  }
+
+  afSaveBtn.addEventListener('click', async () => {
+    afMsgBox.className = 'msg';
+    afMsgBox.style.display = 'none';
+
+    const sourceGroupId = afSource.value;
+    const destinationJid = afDestMode === 'group' ? afDestGroup.value : afDestCustom.value.trim();
+
+    if (!sourceGroupId) {
+      showMsg(afMsgBox, false, '❌ Chagua group ya chanzo (source).');
+      return;
+    }
+    if (!destinationJid) {
+      showMsg(afMsgBox, false, '❌ Chagua au weka pa kupelekea (destination).');
+      return;
+    }
+    if (afTriggerMode === 'numbers' && !afNumbers.value.trim()) {
+      showMsg(afMsgBox, false, '❌ Weka angalau namba moja, au chagua "Admin Yeyote".');
+      return;
+    }
+
+    afSaveBtn.disabled = true;
+    afSaveBtn.textContent = 'Inahifadhi...';
+
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/autoforward', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceGroupId,
+          destinationJid,
+          mode: afTriggerMode,
+          numbers: afNumbers.value,
+        }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        showMsg(afMsgBox, false, '❌ ' + (data.error || 'Hitilafu imetokea.'));
+        return;
+      }
+      showMsg(afMsgBox, true, '✅ Rule imehifadhiwa na imewashwa.');
+      renderAfRules(data.rules);
+    } catch (e) {
+      showMsg(afMsgBox, false, '❌ Imeshindwa kuwasiliana na server.');
+    } finally {
+      afSaveBtn.disabled = false;
+      afSaveBtn.textContent = '💾 Hifadhi Rule';
+    }
+  });
+
+  /* =========================================================
+     SECTION 4c — Group-wise protection (antiGroupMention, antiPromo, antiLink)
+     ========================================================= */
+  const protectFeatures = ['antiGroupMention', 'antiPromo', 'antiLink'];
+  const protectState = {};
+  protectFeatures.forEach(f => { protectState[f] = { enabled: false, groupIds: new Set() }; });
+
+  function renderProtectGroups(feature) {
+    const block = document.querySelector('.protect-block[data-feature="' + feature + '"]');
+    const listEl = block.querySelector('[data-list]');
+    if (!allGroups.length) {
+      listEl.innerHTML = '<div class="group-row" style="justify-content:center;color:var(--muted);">Hakuna groups zilizopatikana</div>';
+      updateProtectCount(feature);
+      return;
+    }
+    listEl.innerHTML = allGroups.map(g => `
+      <label class="group-row">
+        <input type="checkbox" value="${g.id}" ${protectState[feature].groupIds.has(g.id) ? 'checked' : ''} />
+        <span class="g-name">${g.subject}</span>
+        <span class="g-count">${g.participants} members</span>
+      </label>
+    `).join('');
+    listEl.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        if (cb.checked) protectState[feature].groupIds.add(cb.value);
+        else protectState[feature].groupIds.delete(cb.value);
+        updateProtectCount(feature);
+      });
+    });
+    updateProtectCount(feature);
+  }
+
+  function updateProtectCount(feature) {
+    const block = document.querySelector('.protect-block[data-feature="' + feature + '"]');
+    block.querySelector('[data-count]').textContent = 'Umechagua groups: ' + protectState[feature].groupIds.size;
+  }
+
+  document.querySelectorAll('.protect-block').forEach(block => {
+    const feature = block.dataset.feature;
+    const toggleInput = block.querySelector('.protectToggle');
+    const groupsWrap = block.querySelector('.protect-groups');
+
+    toggleInput.addEventListener('change', () => {
+      protectState[feature].enabled = toggleInput.checked;
+      groupsWrap.style.display = toggleInput.checked ? 'block' : 'none';
+      if (toggleInput.checked) renderProtectGroups(feature);
+    });
+
+    block.querySelector('[data-action="all"]').addEventListener('click', () => {
+      allGroups.forEach(g => protectState[feature].groupIds.add(g.id));
+      renderProtectGroups(feature);
+    });
+    block.querySelector('[data-action="none"]').addEventListener('click', () => {
+      protectState[feature].groupIds.clear();
+      renderProtectGroups(feature);
+    });
+  });
+
+  async function loadProtection() {
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/settings');
+      const data = await res.json();
+      if (!data.ok) return;
+      const protection = data.protection || {};
+      protectFeatures.forEach(feature => {
+        const cfg = protection[feature] || {};
+        protectState[feature].enabled = !!cfg.enabled;
+        protectState[feature].groupIds = new Set(cfg.groupIds || []);
+        const block = document.querySelector('.protect-block[data-feature="' + feature + '"]');
+        block.querySelector('.protectToggle').checked = protectState[feature].enabled;
+        block.querySelector('.protect-groups').style.display = protectState[feature].enabled ? 'block' : 'none';
+        if (protectState[feature].enabled) renderProtectGroups(feature);
+      });
+    } catch (e) {
+      // Silent — protection blocks stay off/empty on failure.
+    }
+  }
+
+  const protectSaveBtn = document.getElementById('protectSaveBtn');
+  const protectMsgBox = document.getElementById('protectMsgBox');
+
+  protectSaveBtn.addEventListener('click', async () => {
+    protectMsgBox.className = 'msg';
+    protectMsgBox.style.display = 'none';
+    protectSaveBtn.disabled = true;
+    protectSaveBtn.textContent = 'Inahifadhi...';
+
+    const payload = {
+      features: protectFeatures.map(feature => ({
+        feature,
+        enabled: protectState[feature].enabled,
+        groupIds: Array.from(protectState[feature].groupIds),
+      })),
+    };
+
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/settings/protection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      showMsg(protectMsgBox, !!data.ok, data.ok ? '✅ Ulinzi umehifadhiwa.' : '❌ ' + (data.error || 'Hitilafu imetokea.'));
+    } catch (e) {
+      showMsg(protectMsgBox, false, '❌ Imeshindwa kuwasiliana na server.');
+    } finally {
+      protectSaveBtn.disabled = false;
+      protectSaveBtn.textContent = '💾 Hifadhi Ulinzi';
+    }
+  });
+
+  /* =========================================================
+     SECTION 5 — Billing / Malipo
+     ========================================================= */
+  const billingStatusText = document.getElementById('billingStatusText');
+  const plansGrid = document.getElementById('plansGrid');
+  const billingMsgBox = document.getElementById('billingMsgBox');
+  const payPhoneInput = document.getElementById('payPhoneInput');
+
+  function fmtTZS(n) {
+    return n.toLocaleString('sw-TZ') + '/=';
+  }
+
+  function fmtDateSw(ms) {
+    if (!ms) return '';
+    return new Date(ms).toLocaleString('sw-TZ', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  async function loadBilling() {
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/billing');
+      const data = await res.json();
+      if (!data.ok) {
+        billingStatusText.textContent = '❌ ' + data.error;
+        return;
+      }
+
+      if (data.allowed && data.reason === 'paid') {
+        billingStatusText.textContent = '✅ Umeshalipa — bot inafanya kazi hadi ' + fmtDateSw(data.paidUntil) + '. Unaweza kuongeza siku zaidi wakati wowote.';
+      } else if (data.allowed && data.reason === 'trial') {
+        billingStatusText.textContent = '🎁 Uko kwenye trial ya bure hadi ' + fmtDateSw(data.trialExpiresAt) + '. Lipa mapema ili bot isisimame.';
+      } else {
+        billingStatusText.textContent = '⛔ Muda wako umeisha — bot haitajibu ujumbe hadi ulipe. Chagua package hapa chini:';
+      }
+
+      if (!payPhoneInput.value) payPhoneInput.value = data.phoneNumber || '';
+      payPhoneInput.placeholder = data.phoneNumber || '';
+
+      plansGrid.innerHTML = data.plans.map(p => `
+        <button class="secondary planBtn" data-days="${p.days}" style="text-align:left;display:flex;justify-content:space-between;align-items:center;">
+          <span>${p.days === 1 ? 'Siku 1' : (p.days === 30 ? 'Mwezi 1 (siku 30)' : 'Siku ' + p.days)}</span>
+          <strong>${fmtTZS(p.price)}</strong>
+        </button>
+      `).join('');
+
+      document.querySelectorAll('.planBtn').forEach(btn => {
+        btn.addEventListener('click', () => payForPlan(Number(btn.dataset.days)));
+      });
+    } catch (e) {
+      billingStatusText.textContent = '❌ Imeshindwa kuwasiliana na server.';
+    }
+  }
+
+  async function payForPlan(days) {
+    billingMsgBox.style.whiteSpace = 'normal';
+    document.querySelectorAll('.planBtn').forEach(b => b.disabled = true);
+    try {
+      const res = await fetch(API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ days, paymentPhoneNumber: payPhoneInput.value.trim() }),
+      });
+      const data = await res.json();
+      if (!data.ok) {
+        const detailText = data.details ? '\n\n' + JSON.stringify(data.details) : '';
+        throw new Error((data.error || 'Hitilafu haijulikani.') + detailText);
+      }
+      showMsg(billingMsgBox, true, '✅ ' + data.message);
+    } catch (e) {
+      billingMsgBox.style.whiteSpace = 'pre-wrap';
+      showMsg(billingMsgBox, false, '❌ ' + e.message);
+    } finally {
+      document.querySelectorAll('.planBtn').forEach(b => b.disabled = false);
+    }
+  }
+
+  if (token) {
+    loadGroups().then(() => {
+      loadProtection();
+      loadAutoForward();
+    });
+    loadSettings();
+    loadAutomation();
+    loadBilling();
+  }
+</script>
+</body>
+</html>
