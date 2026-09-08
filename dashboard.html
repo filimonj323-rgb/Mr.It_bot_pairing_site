@@ -503,6 +503,13 @@
         </div>
         <label class="switch"><input type="checkbox" id="tg_autoForwardMessages"><span class="slider"></span></label>
       </div>
+      <div class="toggle-row">
+        <div>
+          <span class="toggle-label">👁️‍🗨️ Auto View-Once</span>
+          <div class="toggle-hint">Fungua view-once (picha/video/sauti) kiotomatiki. Kwenye group inatumwa faragha kwenye inbox yako; kwenye DM inafunguliwa papo hapo.</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="tg_autoViewOnce"><span class="slider"></span></label>
+      </div>
 
       <div class="msg" id="autoMsgBox"></div>
 
@@ -620,8 +627,15 @@
 </div>
 
 <script>
-  // 🔧 Badilisha URL hii iwe ya Railway app yako mwenyewe (bila "/" mwishoni)
-  const API_BASE = "https://mainbot.up.railway.app";
+  // ── Backend base URL ──────────────────────────────────────────────────
+  // This file lives on GitHub Pages (a static-only host) while the actual
+  // server (server.js + /api/dashboard/... routes) runs on Railway — two
+  // different origins. Every fetch() below is prefixed with API_BASE so
+  // requests reach Railway instead of 404-ing against GitHub Pages itself.
+  // EDIT this to your Railway service's URL (same value as
+  // pairing/pairingConfig.js's PAIRING_BASE_URL / MAIN_BOT_API_URL).
+  const API_BASE = 'https://botkuusite.up.railway.app';
+
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token');
 
@@ -1014,7 +1028,7 @@
   }
 
   function buildMediaDownloadUrl() {
-    return API_BASE + '/api/dashboard/' + encodeURIComponent(token) + '/media-download'
+    return '/api/dashboard/' + encodeURIComponent(token) + '/media-download'
       + '?type=' + encodeURIComponent(dlType)
       + '&url=' + encodeURIComponent(currentPreview.url)
       + '&title=' + encodeURIComponent(currentPreview.title || 'download');
@@ -1162,10 +1176,10 @@
   /* =========================================================
      SECTION 4b — Automation toggles (auto view status, n.k.)
      ========================================================= */
-  const autoToggleIds = ['autoViewStatus', 'autoReactStatus', 'autoTyping', 'autoRecording', 'autoReactMessages', 'autoForwardMessages'];
+  const autoToggleIds = ['autoViewStatus', 'autoReactStatus', 'autoTyping', 'autoRecording', 'autoReactMessages', 'autoForwardMessages', 'autoViewOnce'];
   // These default ON for every customer (server treats "not set" as true) —
   // every other toggle here defaults OFF until a customer opts in.
-  const DEFAULT_ON_TOGGLE_IDS = ['autoViewStatus', 'autoReactStatus', 'autoForwardMessages'];
+  const DEFAULT_ON_TOGGLE_IDS = ['autoViewStatus', 'autoReactStatus', 'autoForwardMessages', 'autoViewOnce'];
   const autoMsgBox = document.getElementById('autoMsgBox');
 
   async function loadAutomation() {
